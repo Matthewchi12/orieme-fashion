@@ -25,10 +25,10 @@ app.use('/api/', rateLimit({
   max: 100
 }));
 
-const productRoutes = require('./routes/products');
+const productRoutes = require('./routes
+ const productRoutes = require('./routes/products');
 
-app.use('/api/products', productRoutes);;
-
+app.use('/api/products', productRoutes);
 try {
   authRoutes = require('./routes/auth');
   productRoutes = require('./routes/products');
