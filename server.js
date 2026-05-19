@@ -1,49 +1,78 @@
-// Orieme Matthew Fashion Store - Backend
-const express = require('express');
+ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const orderRoutes = require('./routes/orders');
-const adminRoutes = require('./routes/admin');
-const uploadRoutes = require('./routes/upload');
-
 const app = express();
 
-// Security
+/* ---------------- SECURITY ---------------- */
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
-app.use('/api/', limiter);
+/* ---------------- CORS FIX (IMPORTANT) ---------------- */
+// Render requires safe fallback for undefined FRONTEND_URL
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*",
+  credentials: true
+}));
 
-// Database
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✓ MongoDB Connected'))
-  .catch(err => console.error('MongoDB Error:', err));
+/* ---------------- RATE LIMIT ---------------- */
+app.use('/api/', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+}));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/upload', uploadRoutes);
+/* ---------------- ROUTES ---------------- */
+let authRoutes, productRoutes, orderRoutes, adminRoutes, uploadRoutes;
 
-// Health check
+try {
+  authRoutes = require('./routes/auth');
+  productRoutes = require('./routes/products');
+  orderRoutes = require('./routes/orders');
+  adminRoutes = require('./routes/admin');
+  uploadRoutes = require('./routes/upload');
+
+  app.use('/api/auth', authRoutes);
+  app.use('/api/products', productRoutes);
+  app.use('/api/orders', orderRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/upload', uploadRoutes);
+
+} catch (err) {
+  console.error("Route import error:", err.message);
+}
+
+/* ---------------- HEALTH CHECK ---------------- */
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Orieme Matthew Fashion Store API',
-    version: '1.0.0',
-    status: 'active'
+    status: 'running'
   });
 });
 
+/* ---------------- DATABASE ---------------- */
+const connectDB = async () => {
+  try {
+    if (!process.env.MONGO_URI) {
+      console.error("❌ MONGO_URI is missing in environment variables");
+      return;
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('✓ MongoDB Connected');
+  } catch (err) {
+    console.error('MongoDB Error:', err.message);
+  }
+};
+
+connectDB();
+
+/* ---------------- SERVER START ---------------- */
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✓ Server running on port ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`✓ Server running on port ${PORT}`);
+});
