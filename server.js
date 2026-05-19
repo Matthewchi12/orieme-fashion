@@ -25,8 +25,9 @@ app.use('/api/', rateLimit({
   max: 100
 }));
 
-/* ---------------- ROUTES ---------------- */
-let authRoutes, productRoutes, orderRoutes, adminRoutes, uploadRoutes;
+const productRoutes = require('./routes/products');
+
+app.use('/api/products', productRoutes);;
 
 try {
   authRoutes = require('./routes/auth');
